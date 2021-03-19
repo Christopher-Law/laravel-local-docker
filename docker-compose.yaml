@@ -1,0 +1,52 @@
+version: "3"
+
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/app
+    environment:
+       PHP_FPM_HOST: "php"
+    depends_on:
+      - php
+      - redis
+      - mysql
+
+  php:
+    build:
+      context: .
+      dockerfile: php.dockerfile
+    volumes:
+      - ./src:/var/www/app:delegated
+    user: ${DOCKER_PHP_USER_ID:-1000}:${DOCKER_PHP_GROUP_ID:-1000}
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+
+  mysql:
+    image: mysql:5.7.29
+    restart: unless-stopped
+    volumes:
+      - 'mysql:/var/lib/mysql'
+    tty: true
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: campaigncanvas
+      MYSQL_USER: campaigncanvas
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+
+volumes:
+  mysql:
+    driver: local
